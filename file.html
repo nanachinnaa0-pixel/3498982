@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meu Site — Mapa, Blog e Sobre Nós</title>
+
+  <!-- Leaflet (biblioteca de mapas) -->
+  <link rel="stylesheet" href="[unpkg.com](https://unpkg.com/leaflet@1.9.4/dist/leaflet.css)">
+  <script src="[unpkg.com](https://unpkg.com/leaflet@1.9.4/dist/leaflet.js)"></script>
+
+  <style>
+    /* ===== Paleta de cores ===== */
+    :root {
+      --azul-escuro: #0d2b52;
+      --azul-medio:  #1a5fb4;
+      --azul-claro:  #62a0ea;
+      --preto:       #121212;
+      --branco:      #ffffff;
+      --cinza-claro: #f2f5f9;
+      --vermelho:    #d43a3a;   /* detalhe */
+      --amarelo:     #f5c211;   /* detalhe */
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: var(--cinza-claro);
+      color: var(--preto);
+    }
+
+    /* ===== Menu superior ===== */
+    header {
+      background: var(--azul-escuro);
+      color: var(--branco);
+      position: sticky;
+      top: 0;
+      z-index: 2000;
+      box-shadow: 0 2px 8px rgba(0,0,0,.3);
+    }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .75rem 1rem;
+      flex-wrap: wrap;
+    }
+
+    .logo {
+      font-size: 1.3rem;
+      font-weight: bold;
+    }
+    .logo span { color: var(--amarelo); }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: .5rem;
+    }
+
+    nav button {
+      background: transparent;
+      border: none;
+      color: var(--branco);
+      font-size: 1rem;
+      padding: .5rem 1rem;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background .2s;
+    }
+    nav button:hover { background: var(--azul-medio); }
+    nav button.ativo {
+      background: var(--azul-medio);
+      border-bottom: 3px solid var(--amarelo);
+    }
+
+    /* ===== Seções ===== */
+    main { max-width: 1100px; margin: 0 auto; padding: 1rem; }
+    section { display: none; }
+    section.visivel { display: block; }
+
+    h2 {
+      color: var(--azul-escuro);
+      margin: 1rem 0;
+      border-left: 5px solid var(--vermelho);
+      padding-left: .6rem;
+    }
+
+    /* ===== Área do Mapa ===== */
+    .mapa-controles {
+      display: flex;
+      gap: .5rem;
+      flex-wrap: wrap;
+      margin-bottom: .8rem;
+    }
+
+    .btn {
+      background: var(--azul-medio);
+      color: var(--branco);
+      border: none;
+      padding: .6rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: .95rem;
+      transition: background .2s;
+    }
+    .btn:hover { background: var(--azul-escuro); }
+    .btn.perigo { background: var(--vermelho); }
+    .btn.perigo:hover { background: #a52a2a; }
+    .btn.modo-ativo { background: var(--amarelo); color: var(--preto); }
+
+    #mapa {
+      height: 65vh;
+      min-height: 320px;
+      border-radius: 10px;
+      border: 3px solid var(--azul-escuro);
+    }
+
+    .dica {
+      background: var(--branco);
+      border-left: 4px solid var(--amarelo);
+      padding: .6rem .8rem;
+      margin-bottom: .8rem;
+      border-radius: 6px;
+      font-size: .9rem;
+    }
+
+    /* ===== Blog ===== */
+    .blog-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    article.post {
+      background: var(--branco);
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 6px rgba(0,0,0,.12);
+      display: flex;
+      flex-direction: column;
+    }
+    article.post img { width: 100%; height: 160px; object-fit: cover; }
+    article.post .conteudo { padding: 1rem; }
+    article.post h3 { color: var(--azul-medio); margin-bottom: .4rem; }
+    article.post .data { font-size: .8rem; color: var(--vermelho); margin-bottom: .5rem; }
+
+    /* ===== Sobre nós ===== */
+    .sobre-card {
+      background: var(--branco);
+      padding: 1.5rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,.12);
+      line-height: 1.7;
+    }
+
+    footer {
+      background: var(--preto);
+      color: var(--branco);
+      text-align: center;
+      padding: 1rem;
+      margin-top: 2rem;
+      font-size: .85rem;
+    }
+    footer span { color: var(--amarelo); }
+
+    /* ===== Responsividade ===== */
+    @media (max-width: 600px) {
+      .header-inner { flex-direction: column; gap: .5rem; }
+      nav ul { flex-wrap: wrap; justify-content: center; }
+      #mapa { height: 55vh; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== MENU SUPERIOR ===== -->
+  <header>
+    <div class="header-inner">
+      <div class="logo">Tangará<span>Preview</span></div>
+      <nav>
+        <ul>
+          <li><button class="nav-btn ativo" data-secao="secao-mapa">🗺️ Mapa</button></li>
+          <li><button class="nav-btn" data-secao="secao-blog">📝 Blog</button></li>
+          <li><button class="nav-btn" data-secao="secao-sobre">ℹ️ Canal</button></li>
+          <li><button class="nav-btn" data-secao="secao-sobre">ℹ️ Sobre nós</button></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- ===== ÁREA 1: MAPA ===== -->
+    <section id="secao-mapa" class="visivel">
+      <h2>Mapa de Tangará</h2>
+      <div class="dica">
+        💡 Clique em <strong>"Adicionar ponto"</strong> e depois clique no mapa para criar um marcador
+        com título, descrição e link. Os pontos ficam salvos no seu navegador.
+      </div>
+      <div class="mapa-controles">
+        <button id="btn-adicionar" class="btn">➕ Adicionar ponto</button>
+        <button id="btn-limpar" class="btn perigo">🗑️ Limpar todos os pontos</button>
+      </div>
+      <div id="mapa"></div>
+    </section>
+
+    <!-- ===== ÁREA 2: BLOG ===== -->
+    <section id="secao-blog">
+      <h2>Blog</h2>
+      <div class="blog-grid">
+        <article class="post">
+          <img src="[picsum.photos](https://picsum.photos/seed/post1/600/400)" alt="Imagem do post 1">
+          <div class="conteudo">
+            <h3>Primeiro post</h3>
+            <p class="data">15 de setembro de 2026</p>
+            <p>Este é um exemplo de post do blog. Em breve, mais conteúdo será adicionado aqui.</p>
+          </div>
+        </article>
+        <article class="post">
+          <img src="[picsum.photos](https://picsum.photos/seed/post2/600/400)" alt="Imagem do post 2">
+          <div class="conteudo">
+            <h3>Segundo post</h3>
+            <p class="data">10 de setembro de 2026</p>
+            <p>Outro exemplo de post com texto e imagem, pronto para receber o conteúdo real.</p>
+          </div>
+        </article>
+        <article class="post">
+          <img src="[picsum.photos](https://picsum.photos/seed/post3/600/400)" alt="Imagem do post 3">
+          <div class="conteudo">
+            <h3>Terceiro post</h3>
+            <p class="data">1 de setembro de 2026</p>
+            <p>O layout em grade se adapta automaticamente a telas grandes e pequenas.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===== ÁREA 3: SOBRE NÓS ===== -->
+    <section id="secao-sobre">
+      <h2>Sobre nós</h2>
+      <div class="sobre-card">
+        <p>
+          Bem-vindo(a)! Esta seção receberá os textos institucionais do projeto:
+          quem somos, nossa missão, valores e formas de contato.
+        </p>
+        <p style="margin-top:1rem">
+          <em>Conteúdo em construção...</em>
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    © 2026 <span>MeuSite</span> — Desenvolvido com HTML5, CSS3, JavaScript e Leaflet.
+  </footer>
+
+  <script>
+    /* ============================================================
+       NAVEGAÇÃO ENTRE SEÇÕES
+    ============================================================ */
+    const botoesNav = document.querySelectorAll('.nav-btn');
+    const secoes = document.querySelectorAll('main section');
+
+    botoesNav.forEach(btn => {
+      btn.addEventListener('click', () => {
+        botoesNav.forEach(b => b.classList.remove('ativo'));
+        secoes.forEach(s => s.classList.remove('visivel'));
+        btn.classList.add('ativo');
+        document.getElementById(btn.dataset.secao).classList.add('visivel');
+        // Corrige o tamanho do mapa quando a aba volta a ficar visível
+        if (btn.dataset.secao === 'secao-mapa') {
+          setTimeout(() => mapa.invalidateSize(), 100);
+        }
+      });
+    });
+
+    /* ============================================================
+       MAPA (Leaflet + OpenStreetMap)
+    ============================================================ */
+    const mapa = L.map('mapa').setView([-23.5505, -46.6333], 12); // São Paulo
+
+    L.tileLayer('[{s}.tile.openstreetmap.org](https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png)', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(mapa);
+
+    let modoAdicionar = false;
+    let pontos = JSON.parse(localStorage.getItem('pontosMapa') || '[]');
+
+    const btnAdicionar = document.getElementById('btn-adicionar');
+    const btnLimpar = document.getElementById('btn-limpar');
+
+    // Ativa/desativa o modo de adição de pontos
+    btnAdicionar.addEventListener('click', () => {
+      modoAdicionar = !modoAdicionar;
+      btnAdicionar.classList.toggle('modo-ativo', modoAdicionar);
+      btnAdicionar.textContent = modoAdicionar
+        ? '📍 Clique no mapa...'
+        : '➕ Adicionar ponto';
+      mapa.getContainer().style.cursor = modoAdicionar ? 'crosshair' : '';
+    });
+
+    // Cria o HTML do popup com título, descrição e link opcional
+    function criarPopup(ponto) {
+      let html = `<strong style="color:#1a5fb4">${ponto.titulo}</strong>`;
+      if (ponto.descricao) html += `<br>${ponto.descricao}`;
+      if (ponto.link) html += `<br><a href="${ponto.link}" target="_blank" rel="noopener">🔗 Acessar link</a>`;
+      return html;
+    }
+
+    // Adiciona um marcador no mapa
+    function adicionarMarcador(ponto) {
+      L.marker([ponto.lat, ponto.lng])
+        .addTo(mapa)
+        .bindPopup(criarPopup(ponto));
+    }
+
+    // Carrega pontos salvos no localStorage
+    pontos.forEach(adicionarMarcador);
+
+    // Clique no mapa: cria um novo ponto (apenas no modo de adição)
+    mapa.on('click', (e) => {
+      if (!modoAdicionar) return;
+
+      const titulo = prompt('Título do ponto:');
+      if (!titulo) return;
+
+      const descricao = prompt('Descrição (opcional):') || '';
+      const link = prompt('Link (opcional, ex.: [...](https://...)') || '';
+
+      const ponto = { lat: e.latlng.lat, lng: e.latlng.lng, titulo, descricao, link };
+      pontos.push(ponto);
+      localStorage.setItem('pontosMapa', JSON.stringify(pontos));
+      adicionarMarcador(ponto);
+
+      // Sai do modo de adição
+      btnAdicionar.click();
+    });
+
+    // Remove todos os pontos
+    btnLimpar.addEventListener('click', () => {
+      if (!confirm('Deseja remover todos os pontos do mapa?')) return;
+      pontos = [];
+      localStorage.removeItem('pontosMapa');
+      mapa.eachLayer(layer => {
+        if (layer instanceof L.Marker) mapa.removeLayer(layer);
+      });
+    });
+  </script>
+</body>
+</html>
